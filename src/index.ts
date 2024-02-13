@@ -1,3 +1,3 @@
-import { Add } from './Add.js';
+import { MsgProcessor } from './MsgProcessor.js';
 
-export { Add };
+export { MsgProcessor };

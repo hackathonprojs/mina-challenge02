@@ -1,24 +1,5 @@
-# Mina zkApp: 02challenge
-
-
-
-## How to build
-
-```sh
-npm run build
-```
-
-## How to run tests
-
-```sh
-npm run test
-npm run testw # watch mode
-```
-node build/src/main.js
-
-
-
-# challenge #2 info
+/*
+learn-to-earn challenge #2
 
 Background
 
@@ -73,10 +54,69 @@ Deliverables
 A smart contract implementing the above functionality.
 Tests for the contract.
 
+*/
+
+import {
+    AccountUpdate,
+    Field, 
+    Mina, 
+    PrivateKey,
+    MerkleTree,
+    UInt32,
+} from 'o1js';
+
+import { MsgProcessor, Msg } from './MsgProcessor.js'
+
+const doProofs = true;
+
+let Local = Mina.LocalBlockchain({ proofsEnabled: doProofs });
+Mina.setActiveInstance(Local);
+let initialBalance = 10_000_000_000;
+
+let feePayerKey = Local.testAccounts[0].privateKey;
+let feePayer = Local.testAccounts[0].publicKey;
+
+// the zkapp account
+let zkappKey = PrivateKey.random();
+let zkappAddress = zkappKey.toPublicKey();
+
+console.log("fund new account...");
+
+let msgProcessorZkApp = new MsgProcessor(zkappAddress);
+console.log('Deploying MsgProcessor..');
+if (doProofs) {
+  await MsgProcessor.compile();
+}
+let tx = await Mina.transaction(feePayer, () => {
+  AccountUpdate.fundNewAccount(feePayer).send({
+    to: zkappAddress,
+    amount: initialBalance,
+  });
+  msgProcessorZkApp.deploy();
+});
+await tx.prove();
+await tx.sign([feePayerKey, zkappKey]).send();
+
+console.log('process msg');
+await processMsg(1, 123, 1234, 15001, 16236);
+msgProcessorZkApp.highestProcessed.requireEquals(new UInt32(1));
 
 
+async function processMsg(msgNum: number, agentId: number, xlocation: number, ylocation: number, checksum: number) {
+  let msg = new Msg({
+    msgNum: new UInt32(msgNum),
+    agentId: new UInt32(agentId),
+    xlocation: new UInt32(xlocation),
+    ylocation: new UInt32(ylocation),
+    checksum: new UInt32(checksum),
+  });
 
+  let tx = await Mina.transaction(feePayer, () => {
+      msgProcessorZkApp.processMsg(msg);
+  });
+  await tx.prove();
+  await tx.sign([feePayerKey, zkappKey]).send();
 
-## License
+  // if the transaction was successful, we can update our off-chain storage as well
 
-[Apache-2.0](LICENSE)
+}
