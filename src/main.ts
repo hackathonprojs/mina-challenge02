@@ -1,4 +1,9 @@
 /*
+
+the test cases are moved from this file to MsgProcessor.test.ts.  
+this file is no longer needed for testing purpose.
+
+
 learn-to-earn challenge #2
 
 Background
@@ -98,9 +103,25 @@ await tx.prove();
 await tx.sign([feePayerKey, zkappKey]).send();
 
 console.log('process msg');
+await processMsg(0, 123, 1234, 15001, 16236);
+msgProcessorZkApp.highestProcessed.requireEquals(new UInt32(0));
 await processMsg(1, 123, 1234, 15001, 16236);
 msgProcessorZkApp.highestProcessed.requireEquals(new UInt32(1));
-
+await processMsg(2, 123, 1234, 15001, 16236);
+msgProcessorZkApp.highestProcessed.requireEquals(new UInt32(2));
+console.log("wrong checksum");
+await processMsg(3, 1234, 1234, 15001, 16236);
+msgProcessorZkApp.highestProcessed.requireEquals(new UInt32(2));
+console.log("out of range msgNum");
+console.log("out of range agent id");
+console.log("out of range xlocation");
+console.log("out of range ylocation - smaller");
+console.log("out of range ylocation - bigger");
+console.log("xlocation > ylocation");
+console.log("smaller  msgNum");
+console.log("agentid 0");
+await processMsg(3, 1234, 1234, 15001, 16236);
+msgProcessorZkApp.highestProcessed.requireEquals(new UInt32(2));
 
 async function processMsg(msgNum: number, agentId: number, xlocation: number, ylocation: number, checksum: number) {
   let msg = new Msg({

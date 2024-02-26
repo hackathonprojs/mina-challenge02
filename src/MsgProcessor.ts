@@ -11,6 +11,9 @@ Each message has
   - Agent YLocation (should be between 5000 and 20000)
   - CheckSum
 
+we did this in struct.  
+
+alternatively, we can pack the whole thign in one field.  
 a field is 255bits.  
 we will divide the field as:
 first 32 bits: message number
